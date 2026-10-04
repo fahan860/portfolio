@@ -37,10 +37,31 @@ export class BM25 {
   private df = new Map<string, number>();
   private avgdl: number;
   constructor(private chunks: Chunk[], private k1 = 1.4, private b = 0.75) {
-    this.docs = chunks.map((c) => tokenize(`${c.title} ${c.title} ${c.text}`));
+    this.docs = chunks.map((c) => tokenize(`${c.title} ${c.title} ${c.label.fr} ${c.text} ${c.display.fr}`));
     for (const d of this.docs) for (const t of new Set(d)) this.df.set(t, (this.df.get(t) ?? 0) + 1);
     this.avgdl = this.docs.reduce((a, d) => a + d.length, 0) / this.docs.length;
   }
+  /** Passages classés avec leur score (sans ajout du profil). */
+  rank(query: string, k = 3): { chunk: Chunk; score: number }[] {
+    const q = tokenize(query);
+    const N = this.docs.length;
+    return this.docs
+      .map((d, i) => {
+        let score = 0;
+        for (const t of q) {
+          const f = d.filter((x) => x === t).length;
+          if (!f) continue;
+          const n = this.df.get(t) ?? 0;
+          const idf = Math.log(1 + (N - n + 0.5) / (n + 0.5));
+          score += idf * ((f * (this.k1 + 1)) / (f + this.k1 * (1 - this.b + (this.b * d.length) / this.avgdl)));
+        }
+        return { chunk: this.chunks[i], score };
+      })
+      .filter((s) => s.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, k);
+  }
+
   search(query: string, k = 3): Chunk[] {
     const q = tokenize(query);
     const N = this.docs.length;

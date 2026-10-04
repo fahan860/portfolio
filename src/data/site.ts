@@ -32,7 +32,7 @@ export const ui = {
     en: "Looking for a 4–6 month end-of-studies internship (PFE) from February 2027 in Machine Learning, AI or Data Engineering.",
   },
   cvBtn: { fr: "Télécharger mon CV", en: "Download my CV" },
-  askBtn: { fr: "Poser une question à mon IA", en: "Ask my AI assistant" },
+  askBtn: { fr: "Poser une question (FAQ)", en: "Ask a question (FAQ)" },
   projectsTitle: { fr: "Projets", en: "Projects" },
   projectsSub: {
     fr: "Chaque projet : le problème, ce qui a été construit et le résultat mesuré. Cliquez pour l’étude de cas complète.",

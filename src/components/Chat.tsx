@@ -4,25 +4,25 @@ import { useEffect, useRef, useState } from "react";
 import type { Lang } from "@/data/site";
 import { Close, Send, Sparkles } from "./icons";
 
-type Msg = { role: "user" | "assistant"; content: string };
+type Msg = { role: "user" | "assistant"; content: string; followups?: string[] };
 
 const TXT = {
-  title: { fr: "Ask Fatima · assistant IA", en: "Ask Fatima · AI assistant" },
+  title: { fr: "Ask Fatima · FAQ", en: "Ask Fatima · FAQ" },
   hello: {
-    fr: "Bonjour ! Je suis l’assistant de Fatima. Posez-moi une question sur ses projets, ses compétences ou sa disponibilité.",
-    en: "Hi! I’m Fatima’s assistant. Ask me about her projects, skills or availability.",
+    fr: "Bonjour ! Posez une question sur les projets, les compétences ou la disponibilité de Fatima — je réponds à partir du contenu du portfolio.",
+    en: "Hi! Ask about Fatima’s projects, skills or availability — answers come straight from the portfolio content.",
   },
   placeholder: { fr: "Votre question…", en: "Your question…" },
   suggestions: {
-    fr: ["Quel est son meilleur projet en IA ?", "Quand est-elle disponible ?", "A-t-elle de l’expérience en Data Engineering ?"],
-    en: ["What is her best AI project?", "When is she available?", "Does she have data engineering experience?"],
+    fr: ["Quand est-elle disponible ?", "Expérience en Data Engineering ?", "Parle-moi du projet AUTO+", "Quelles compétences en IA ?"],
+    en: ["When is she available?", "Data engineering experience?", "Tell me about AUTO+", "What AI skills does she have?"],
   },
   note: {
-    fr: "RAG : recherche BM25 sur une base de connaissances + LLM Gemini. Réponses limitées aux faits du portfolio.",
-    en: "RAG: BM25 retrieval over a knowledge base + Gemini LLM. Answers are grounded in portfolio facts only.",
+    fr: "FAQ intelligente : recherche BM25 dans une base de connaissances sur le portfolio. Réponses tirées directement du portfolio, sans LLM.",
+    en: "Smart FAQ: BM25 search over a knowledge base built from the portfolio. Answers come straight from the portfolio, no LLM.",
   },
   error: { fr: "Erreur réseau, réessayez.", en: "Network error, please retry." },
-  open: { fr: "Ouvrir l’assistant IA", en: "Open AI assistant" },
+  open: { fr: "Ouvrir la FAQ Ask Fatima", en: "Open the Ask Fatima FAQ" },
 };
 
 export default function Chat({ lang, open, setOpen }: { lang: Lang; open: boolean; setOpen: (o: boolean) => void }) {
@@ -49,7 +49,7 @@ export default function Chat({ lang, open, setOpen }: { lang: Lang; open: boolea
         body: JSON.stringify({ messages: next, lang }),
       });
       const data = await r.json();
-      setMsgs([...next, { role: "assistant", content: data.answer ?? TXT.error[lang] }]);
+      setMsgs([...next, { role: "assistant", content: data.answer ?? TXT.error[lang], followups: data.followups }]);
     } catch {
       setMsgs([...next, { role: "assistant", content: TXT.error[lang] }]);
     } finally {
@@ -91,7 +91,20 @@ export default function Chat({ lang, open, setOpen }: { lang: Lang; open: boolea
                 ))}
               </div>
             )}
-            {msgs.map((m, i) => <Bubble key={i} role={m.role} text={m.content} />)}
+            {msgs.map((m, i) => (
+              <div key={i} className="space-y-2">
+                <Bubble role={m.role} text={m.content} />
+                {i === msgs.length - 1 && !loading && !!m.followups?.length && (
+                  <div className="flex flex-wrap gap-2">
+                    {m.followups.map((f) => (
+                      <button key={f} onClick={() => ask(f)} className="rounded-full border border-line px-3 py-1 text-left text-xs text-muted transition hover:border-accent/60 hover:text-text">
+                        {f}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
             {loading && (
               <div className="flex gap-1 px-1 py-2" aria-label="…">
                 {[0, 1, 2].map((i) => (
